@@ -79,32 +79,35 @@ class SDLCApp:
         project_dir = f"generated_code_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         os.makedirs(project_dir, exist_ok=True)
 
-        # Create basic project structure
-        self.current_structure = {
-            "README.md": f"# {self.persistent_storage['project_name']}\n\n{self.persistent_storage['requirements']}",
-            "requirements.txt": "# Generated requirements\n",
-            "src/main.cpp": code_structure,
-            "tests/test_main.cpp": "# Generated tests\n",
-            "docs/technical_design.md": self.persistent_storage["technical_design"]
-        }
+        try:
+            # Parse the generated code structure
+            self.current_structure = json.loads(code_structure)
+            
+            # Ensure proper file organization
+            for filepath, content in self.current_structure.items():
+                # Create full path and ensure directory exists
+                full_path = os.path.join(project_dir, filepath)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                
+                # Write content with proper line endings
+                with open(full_path, 'w', newline='\n') as f:
+                    f.write(content)
 
-        # Create files and directories
-        for filepath, content in self.current_structure.items():
-            full_path = os.path.join(project_dir, filepath)
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
-            with open(full_path, 'w') as f:
-                f.write(content)
+            # Create zip file with proper directory structure
+            zip_filename = f"{project_dir}.zip"
+            with zipfile.ZipFile(zip_filename, 'w') as zipf:
+                for root, _, files in os.walk(project_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        arcname = os.path.relpath(file_path, project_dir)
+                        zipf.write(file_path, arcname)
 
-        # Create zip file
-        zip_filename = f"{project_dir}.zip"
-        with zipfile.ZipFile(zip_filename, 'w') as zipf:
-            for root, _, files in os.walk(project_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    zipf.write(file_path, os.path.relpath(file_path, project_dir))
+            shutil.rmtree(project_dir)
+            return zip_filename, gr.Dropdown.update(choices=list(self.current_structure.keys())), ""
 
-        shutil.rmtree(project_dir)
-        return zip_filename, gr.Dropdown.update(choices=list(self.current_structure.keys())), ""
+        except Exception as e:
+            print(f"Error generating code: {str(e)}")
+            return None, gr.Dropdown.update(choices=[]), "Failed to generate code structure"
 
     def update_preview(self, selected_file):
         if selected_file in self.current_structure:
@@ -113,7 +116,7 @@ class SDLCApp:
 
     def create_interface(self):
         with gr.Blocks() as self.demo:
-            gr.Markdown("# Software Development Life Cycle Assistant")
+            gr.Markdown("# Embedded Software Development Life Cycle Assistant")
             
             with gr.Tabs() as tabs:
                 with gr.TabItem("Requirements Input"):

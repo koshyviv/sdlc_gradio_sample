@@ -47,17 +47,24 @@ High-Level Design:
 
 Format your response with proper technical details, considerations, and relevant diagrams.""",
 
-    "technical_to_code": """As a senior embedded software developer, generate a complete codebase structure in C++ based on this technical design. Include:
-1. Directory Structure
-2. Main Code Files
-3. Configuration Files
-4. Test Cases
-5. Documentation
+    "technical_to_code": '''As a senior embedded software developer, generate a complete C++ codebase structure based on this technical design.
+Format your response as a valid JSON object containing file paths and their contents.
 
 Technical Design:
 {technical_design}
 
-Format your response as a detailed code implementation plan in C++."""
+Expected format example:
+{{
+    "src/main.cpp": "#include <iostream>\\nint main() {{\\n    return 0;\\n}}\\n",
+    "include/project_name.h": "#pragma once\\n\\n// Header content\\n",
+    "src/project_name.cpp": "// Implementation\\n",
+    "CMakeLists.txt": "cmake_minimum_required(VERSION 3.10)\\n",
+    "README.md": "# Project\\n"
+}}
+
+Note: Use proper C++ coding standards and include necessary header guards, error handling, and initialization.
+Generate complete, compilable code for an embedded system.
+'''
 }
 
 SYSTEM_MESSAGES = {
