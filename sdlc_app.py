@@ -16,6 +16,7 @@ class SDLCApp:
             "project_name": "",
             "timestamp": ""
         }
+        self.current_structure = {}
         self.create_interface()
 
     def save_state(self):
@@ -62,7 +63,7 @@ class SDLCApp:
         os.makedirs(project_dir, exist_ok=True)
 
         # Create basic project structure
-        structure = {
+        self.current_structure = {
             "README.md": f"# {self.persistent_storage['project_name']}\n\n{self.persistent_storage['requirements']}",
             "requirements.txt": "# Generated requirements\n",
             "src/main.py": code_structure,
@@ -71,7 +72,7 @@ class SDLCApp:
         }
 
         # Create files and directories
-        for filepath, content in structure.items():
+        for filepath, content in self.current_structure.items():
             full_path = os.path.join(project_dir, filepath)
             os.makedirs(os.path.dirname(full_path), exist_ok=True)
             with open(full_path, 'w') as f:
@@ -86,7 +87,12 @@ class SDLCApp:
                     zipf.write(file_path, os.path.relpath(file_path, project_dir))
 
         shutil.rmtree(project_dir)
-        return zip_filename, structure
+        return zip_filename, gr.Dropdown.update(choices=list(self.current_structure.keys())), ""
+
+    def update_preview(self, selected_file):
+        if selected_file in self.current_structure:
+            return self.current_structure[selected_file]
+        return ""
 
     def create_interface(self):
         with gr.Blocks() as self.demo:
@@ -111,9 +117,20 @@ class SDLCApp:
 
                 with gr.TabItem("Code Generation"):
                     generate_button = gr.Button("Generate Code")
-                    download_link = gr.File(label="Download Code")
-                    code_tree = gr.Tree(label="Generated Code Structure")
-                    code_preview = gr.Textbox(label="File Preview", lines=20, interactive=False)
+                    with gr.Row():
+                        with gr.Column():
+                            download_link = gr.File(label="Download Code")
+                            file_dropdown = gr.Dropdown(
+                                label="Select File to Preview",
+                                choices=[],
+                                interactive=True
+                            )
+                        with gr.Column():
+                            code_preview = gr.TextArea(
+                                label="File Preview",
+                                lines=20,
+                                interactive=False
+                            )
 
             # Event handlers
             next_button_1.click(
@@ -133,7 +150,12 @@ class SDLCApp:
             )
             generate_button.click(
                 self.generate_code,
-                outputs=[download_link, code_tree]
+                outputs=[download_link, file_dropdown, code_preview]
+            )
+            file_dropdown.change(
+                self.update_preview,
+                inputs=[file_dropdown],
+                outputs=[code_preview]
             )
             save_state_button.click(
                 self.save_state,
@@ -143,17 +165,6 @@ class SDLCApp:
                 self.load_state,
                 inputs=[load_state_button],
                 outputs=[requirements_input, hld_input, technical_design_input]
-            )
-
-            def update_code_preview(file_path):
-                with open(file_path, 'r') as file:
-                    content = file.read()
-                return content
-
-            code_tree.change(
-                update_code_preview,
-                inputs=code_tree,
-                outputs=code_preview
             )
 
     def launch(self):
