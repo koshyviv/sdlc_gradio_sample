@@ -83,8 +83,8 @@ class SDLCApp:
         self.current_structure = {
             "README.md": f"# {self.persistent_storage['project_name']}\n\n{self.persistent_storage['requirements']}",
             "requirements.txt": "# Generated requirements\n",
-            "src/main.py": code_structure,
-            "tests/test_main.py": "# Generated tests\n",
+            "src/main.cpp": code_structure,
+            "tests/test_main.cpp": "# Generated tests\n",
             "docs/technical_design.md": self.persistent_storage["technical_design"]
         }
 
@@ -119,10 +119,13 @@ class SDLCApp:
                 with gr.TabItem("Requirements Input"):
                     project_name = gr.Textbox(label="Project Name")
                     requirements_input = gr.Textbox(label="Enter Requirements", lines=10)
+                    requirements_file = gr.File(label="Upload Requirements File")
                     next_button_1 = gr.Button("Generate HLD")
-                    save_state_button = gr.Button("Save Current State")
-                    load_state_button = gr.File(label="Load Previous State")
-                    state_output = gr.File(label="Saved State")
+                    
+                    with gr.Accordion("State Management", open=False):
+                        save_state_button = gr.Button("Save Current State")
+                        load_state_button = gr.File(label="Load Previous State")
+                        state_output = gr.File(label="Saved State")
 
                 with gr.TabItem("High-Level Design (HLD)"):
                     hld_input = gr.Textbox(label="High-Level Design", lines=10)
@@ -184,6 +187,11 @@ class SDLCApp:
                 self.load_state,
                 inputs=[load_state_button],
                 outputs=[requirements_input, hld_input, technical_design_input]
+            )
+            requirements_file.change(
+                lambda file: (open(file.name).read() if file else ""),
+                inputs=requirements_file,
+                outputs=requirements_input
             )
 
     def launch(self):
