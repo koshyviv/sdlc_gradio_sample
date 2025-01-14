@@ -7,30 +7,43 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL')
 
 PROMPTS = {
-    "requirements_to_hld": """As a senior software architect, analyze these requirements and create a comprehensive high-level design. Include:
-1. System Architecture Overview
-2. Main Components
-3. Data Flow
-4. Technology Stack
-5. Integration Points
+    "requirements_to_hld": """As a senior software architect, analyze these requirements and create a comprehensive high-level design. 
+Include both textual description and a Graphviz diagram.
+
+For the diagram, use dot notation. Wrap the diagram in ```dot tags.
+Example diagram format:
+```dot
+digraph G {{
+    A -> B;
+    B -> C;
+    B -> D;
+}}
+```
 
 Requirements:
 {requirements}
 
-Format your response in a clear, structured manner.""",
+Format your response in this order:
+1. System Architecture Overview (with Graphviz diagram)
+2. Main Components
+3. Data Flow
+4. Technology Stack
+5. Integration Points""",
 
-    "hld_to_technical": """As a technical lead, convert this high-level design into a detailed technical specification. Include:
-1. Detailed Component Specifications
-2. Database Schema (if applicable)
-3. API Endpoints (if applicable)
-4. Class/Module Structure
-5. Security Considerations
-6. Performance Optimization Strategies
+    "hld_to_technical": """As a technical lead, convert this high-level design into a detailed technical specification.
+Include both textual description and detailed technical diagrams using Graphviz.
+
+Create diagrams for:
+1. Component relationships
+2. Data flow
+3. Class diagram (if applicable)
+
+Use ```dot notation for diagrams.
 
 High-Level Design:
 {hld}
 
-Format your response with proper technical details and considerations.""",
+Format your response with proper technical details, considerations, and relevant diagrams.""",
 
     "technical_to_code": """As a senior software developer, generate a complete codebase structure based on this technical design. Include:
 1. Directory Structure

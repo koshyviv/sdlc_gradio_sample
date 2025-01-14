@@ -5,6 +5,8 @@ import zipfile
 import json
 from ai_helper import AIHelper
 from datetime import datetime
+import re
+import graphviz
 
 class SDLCApp:
     def __init__(self):
@@ -18,6 +20,19 @@ class SDLCApp:
         }
         self.current_structure = {}
         self.create_interface()
+
+    def extract_and_render_graphviz(self, text):
+        # Extract Graphviz diagram and convert to image
+        diagram_match = re.search(r'```dot(.*?)```', text, re.DOTALL)
+        if diagram_match:
+            diagram = diagram_match.group(1).strip()
+            graph = graphviz.Source(diagram)
+            graph_path = f"graph_{datetime.now().strftime('%Y%m%d_%H%M%S')}.svg"
+            graph.render(filename=graph_path, format='svg', cleanup=False)  # Set cleanup to False
+            # Remove the Graphviz code block from the text
+            text = re.sub(r'```dot.*?```', '', text, flags=re.DOTALL).strip()
+            return text, f"{graph_path}.svg"  # Ensure the correct file path is returned
+        return text, ""
 
     def save_state(self):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -43,13 +58,15 @@ class SDLCApp:
         self.persistent_storage["requirements"] = requirements
         hld = self.ai_helper.generate_hld(requirements)
         self.persistent_storage["hld"] = hld
-        return gr.update(selected=1), hld
+        rendered_hld, diagram_path = self.extract_and_render_graphviz(hld)
+        return gr.update(selected=1), rendered_hld, diagram_path
 
     def save_hld(self, hld):
         self.persistent_storage["hld"] = hld
         technical_design = self.ai_helper.generate_technical_design(hld)
         self.persistent_storage["technical_design"] = technical_design
-        return gr.update(selected=2), technical_design
+        rendered_technical, diagram_path = self.extract_and_render_graphviz(technical_design)
+        return gr.update(selected=2), rendered_technical, diagram_path
 
     def save_technical_design(self, technical_design):
         self.persistent_storage["technical_design"] = technical_design
@@ -109,10 +126,12 @@ class SDLCApp:
 
                 with gr.TabItem("High-Level Design (HLD)"):
                     hld_input = gr.Textbox(label="High-Level Design", lines=10)
+                    hld_diagram = gr.Image(label="HLD Diagram")
                     next_button_2 = gr.Button("Generate Technical Design")
 
                 with gr.TabItem("Technical Design"):
                     technical_design_input = gr.Textbox(label="Technical Design", lines=10)
+                    technical_design_diagram = gr.Image(label="Technical Design Diagram")
                     next_button_3 = gr.Button("Next")
 
                 with gr.TabItem("Code Generation"):
@@ -136,12 +155,12 @@ class SDLCApp:
             next_button_1.click(
                 self.save_requirements,
                 inputs=[project_name, requirements_input],
-                outputs=[tabs, hld_input]
+                outputs=[tabs, hld_input, hld_diagram]
             )
             next_button_2.click(
                 self.save_hld,
                 inputs=[hld_input],
-                outputs=[tabs, technical_design_input]
+                outputs=[tabs, technical_design_input, technical_design_diagram]
             )
             next_button_3.click(
                 self.save_technical_design,
