@@ -1,4 +1,5 @@
 *.zip
 *.svg
 .env
-*.pyc*
+**/__pycache__/
+*.py[cod]
